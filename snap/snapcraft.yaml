@@ -1,8 +1,15 @@
 name: strawverse
-version: '6.0.3'
+version: '6.0.4'
+title: StrawVerse
 summary: Download anime in batches & its fast :3
 description: |
   StrawVerse is a Node.js-based anime & manga downloader that allows you to download anime episodes in bulk, quickly, and from multiple sources. It has functionality to automatically add the downloaded anime to your MyAnimeList plan-to-watch list.
+license: ISC
+contact: https://github.com/TheYogMehta/StrawVerse/issues
+donation: https://buymeacoffee.com/kowareta
+issues: https://github.com/TheYogMehta/StrawVerse/issues
+source-code: https://github.com/TheYogMehta/StrawVerse
+website: https://github.com/TheYogMehta/StrawVerse
 
 base: core22
 confinement: strict
