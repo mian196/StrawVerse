@@ -1,0 +1,88 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (build without publishing to GitHub Releases)'
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build & Release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+
+    defaults:
+      run:
+        working-directory: ./src
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: ./src/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Update Snap Version
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          VERSION=$(echo "${{ github.ref_name }}" | sed 's/^v//')
+          if [[ "${{ github.ref }}" != refs/tags/* ]]; then
+            VERSION=$(node -p "require('./package.json').version")
+          fi
+          echo "Updating snap version to $VERSION"
+          sed -i "s/version: '.*'/version: '$VERSION'/g" ../snap/snapcraft.yaml
+        shell: bash
+
+      - name: Build and Publish Application (Installer & AppImage)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PUBLISH_MODE="always"
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            PUBLISH_MODE="never"
+          fi
+          
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            npx electron-builder --win --publish $PUBLISH_MODE
+          else
+            npx electron-builder --linux AppImage --publish $PUBLISH_MODE
+          fi
+        shell: bash
+
+      - name: Build Snap Package using Canonical Action
+        if: matrix.os == 'ubuntu-latest'
+        uses: canonical/action-build@v1
+        id: snapcraft
+
+      - name: Upload Snap Package to GitHub Release
+        if: matrix.os == 'ubuntu-latest' && github.event.inputs.dry_run != 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Ensure release draft exists in case Linux finishes first
+          gh release create ${{ github.ref_name }} --draft --title "StrawVerse ${{ github.ref_name }}" || true
+          
+          # Upload the built snap file
+          gh release upload ${{ github.ref_name }} "${{ steps.snapcraft.outputs.snap }}" --clobber
+        shell: bash
+

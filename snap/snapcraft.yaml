@@ -1,0 +1,29 @@
+name: strawverse
+version: '6.0.1'
+summary: Download anime in batches & its fast :3
+description: |
+  StrawVerse is a Node.js-based anime & manga downloader that allows you to download anime episodes in bulk, quickly, and from multiple sources. It has functionality to automatically add the downloaded anime to your MyAnimeList plan-to-watch list.
+
+base: core22
+confinement: strict
+grade: stable
+
+apps:
+  strawverse:
+    command: strawverse/strawverse --no-sandbox
+    extensions: [gnome]
+    plugs:
+      - browser-support
+      - network
+      - network-bind
+      - opengl
+      - home
+      - removable-media
+
+parts:
+  strawverse:
+    plugin: nil
+    source: src/dist/linux-unpacked
+    override-build: |
+      mkdir -p $SNAPCRAFT_PART_INSTALL/strawverse
+      cp -r * $SNAPCRAFT_PART_INSTALL/strawverse/
