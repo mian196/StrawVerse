@@ -30,8 +30,10 @@ apps:
       - browser-support
       - network
       - network-bind
+      - gsettings
       - opengl
       - audio-playback
+      - pulseaudio
       - home
       - removable-media
 
